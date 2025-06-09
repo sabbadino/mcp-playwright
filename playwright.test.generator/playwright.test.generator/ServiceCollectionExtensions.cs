@@ -6,6 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol.Transport;
+using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol.Server;
 using playwright.test.generator.IocConventions;
 using playwright.test.generator.Settings;
 
@@ -23,11 +27,11 @@ namespace playwright.test.generator
         /// <param name="generativeAIOptionsAction">The action to configure GenerativeAI options.</param>
         /// <returns>The modified service collection.</returns>
         public static IServiceCollection AddPlayWrightTestGeneratorOptions(this IServiceCollection services,
-            Action<PlayWrightTestGeneratorOptions> generativeAiOptionsAction)
+            Action<PlayWrightTestGeneratorOptions> playWrightTestGeneratorOptionsAction)
         {
-            var generativeAiOptions = new PlayWrightTestGeneratorOptions();
-            generativeAiOptionsAction.Invoke(generativeAiOptions);
-            return services.AddPlayWrightTestGeneratorOptions(generativeAiOptions);    
+            var playWrightTestGeneratorOptions = new PlayWrightTestGeneratorOptions();
+            playWrightTestGeneratorOptionsAction.Invoke(playWrightTestGeneratorOptions);
+            return services.AddPlayWrightTestGeneratorOptions(playWrightTestGeneratorOptions);    
 
         }
 
@@ -35,10 +39,10 @@ namespace playwright.test.generator
         /// Adds Elasticsearch GenerativeAi Functionalities to the service collection.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="generativeAiOptions">The GenerativeAi options.</param>
+        /// <param name="playWrightTestGeneratorOptions">The GenerativeAi options.</param>
         /// <returns>The modified service collection.</returns>
         public static IServiceCollection AddPlayWrightTestGeneratorOptions(this IServiceCollection services,
-            PlayWrightTestGeneratorOptions? generativeAiOptions)
+            PlayWrightTestGeneratorOptions? playWrightTestGeneratorOptions)
         {
             // LLM api-keys are not in the appsettings file 
             // if you are running locally put them in the secret files
@@ -46,17 +50,17 @@ namespace playwright.test.generator
             // or bring the secret file in the container    
             // to add path to user secret file in docker compose for debug ..
             // (not sure it works in linux container) see https://stackoverflow.com/questions/42729723/should-i-use-user-secrets-or-environment-variables-with-docker
-            ArgumentNullException.ThrowIfNull(generativeAiOptions);    
+            ArgumentNullException.ThrowIfNull(playWrightTestGeneratorOptions);    
             var validator = new SemanticKernelOptionsValidation();
             // I want to trigger validation during setup
             // i will not even inject GenerativeAiOptions in the IOC 
-            var validationResult = validator.Validate(null, generativeAiOptions);
+            var validationResult = validator.Validate(null, playWrightTestGeneratorOptions);
             if (validationResult.Failed)
             {
                 throw new SemanticKernelConfigurationException($"SemanticKernelOptions validation failed: {string.Join(',', validationResult.Failures)}");
             }
 
-            var kernelsSettings = generativeAiOptions.SemanticKernelsSettings;
+            var kernelsSettings = playWrightTestGeneratorOptions.SemanticKernelsSettings;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             // checked for null by semanticKernelOptionsValidation.Validate
             var allPlugins = kernelsSettings.KernelSettings.SelectMany(k => k.Plugins).Distinct();
@@ -74,54 +78,105 @@ namespace playwright.test.generator
                 });
             }
 
+           
             foreach (var kernelSetting in kernelsSettings.KernelSettings)
             {
                 services.AddTransient(globalServiceProvider =>
                 {
+                    // create kernel 
                     var skBuilder = Kernel.CreateBuilder();
-                    var model = kernelSetting.Model;
-                    ArgumentNullException.ThrowIfNull(model);
-                    if (!kernelsSettings.ApiKeys.TryGetValue(model.ApiKeyName, out var apiKeyValue))
-                    {
-                        throw new Exception($"Could not find key {model.ApiKeyName}");
-                    }
-                    if (string.IsNullOrEmpty(apiKeyValue))
-                    {
-                        throw new Exception($"value for key {model.ApiKeyName} was found but is null or empty");
-                    }
-                    if (model.Category == ModelCategory.AzureOpenAi)
-                    {
-                        skBuilder.AddAzureOpenAIChatCompletion(model.DeploymentOrModelName, model.Url, apiKeyValue);
-                    }
-                    else if (model.Category == ModelCategory.OpenAi)
-                    {
-                        skBuilder.AddOpenAIChatCompletion(model.DeploymentOrModelName, apiKeyValue);
-                    }
-                    else if (model.Category == ModelCategory.AzureOpenAi)
-                    {
-#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                        skBuilder.AddGoogleAIGeminiChatCompletion(model.DeploymentOrModelName, apiKeyValue);
-#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                    }
+                    ConfigureKernel(skBuilder, kernelSetting, kernelsSettings);
                     if (kernelsSettings.LogLevel != null)
                     {
                         skBuilder.Services.AddLogging(l => l.SetMinimumLevel(kernelsSettings.LogLevel.Value).AddConsole());
                     }
                     var kernel = skBuilder.Build();
-                    // register the plugin for this kernel 
-                    foreach (var namespaceQualifiedClassName in kernelSetting.Plugins)
-                    {
-                        var pluginName = namespaceQualifiedClassName.Split('.').Last();
-                        var plugin = globalServiceProvider.GetRequiredKeyedService<KernelPlugin>(pluginName);
-                        ArgumentNullException.ThrowIfNull(plugin, $"Plugin {pluginName} could not be cast to KernelPlugin");
-                        kernel.Plugins.Add(plugin);
+
+                    // register internal the plugin for this kernel 
+                    RegisterKernelPlugins(globalServiceProvider, kernel, kernelSetting.Plugins);
+
+                    // register mcp plugin for this kernel 
+                    if (!string.IsNullOrEmpty(kernelSetting.McpServerName)) 
+                    { 
+                        AddToolsFromMcpClient(services, globalServiceProvider, kernel, kernelSetting);
                     }
                     return new KernelWrapper { KernelSettings = kernelSetting, Kernel = kernel };
                 });
             }
             services.RegisterByConvention<PlayWrightTestGeneratorOptions>();
-            services.AddSingleton(Options.Create(generativeAiOptions));
+            services.AddSingleton(Options.Create(playWrightTestGeneratorOptions));
             return services;
         }
+
+        private static void ConfigureKernel(IKernelBuilder skBuilder, dynamic kernelSetting, dynamic kernelsSettings)
+        {
+            var model = kernelSetting.Model;
+            ArgumentNullException.ThrowIfNull(model);
+            string deploymentOrModelName = model.DeploymentOrModelName;
+            string? url = model.Url;
+            string apiKeyName = model.ApiKeyName;
+            var category = model.Category;
+            if (!kernelsSettings.ApiKeys.TryGetValue(apiKeyName, out string apiKeyValue))
+            {
+                throw new Exception($"Could not find key {apiKeyName}");
+            }
+            if (string.IsNullOrEmpty(apiKeyValue))
+            {
+                throw new Exception($"value for key {apiKeyName} was found but is null or empty");
+            }
+            if (category == ModelCategory.AzureOpenAi)
+            {
+                skBuilder.AddAzureOpenAIChatClient(deploymentOrModelName, url, apiKeyValue);
+            }
+            else if (category == ModelCategory.OpenAi)
+            {
+                skBuilder.AddOpenAIChatClient(deploymentOrModelName, apiKeyValue);
+            }
+            // TODO : add Antropic and google , register as ichatclient (ms.ai.extensions)
+//            else if (model.Category == ModelCategory.Gemini)
+//            {
+//#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//                skBuilder.AddGoogleAIGeminiChatCompletion(model.DeploymentOrModelName, apiKeyValue);
+//#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//            }
+        }
+
+        private static void AddToolsFromMcpClient(IServiceCollection services, IServiceProvider globalServiceProvider, Kernel kernel, dynamic kernelSetting)
+        {
+            var clientTransport = new StdioClientTransport(new()
+            {
+                Name = kernelSetting.McpServerName, //"playwright-ms",
+                Command = kernelSetting.Command,//"npx",
+                Arguments = kernelSetting.Arguments //["@playwright/mcp@latest", "--isolated"],
+            });
+            services.AddSingleton((serviceProvider) =>
+            {
+                var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+                var mcpClient = McpClientFactory.CreateAsync(clientTransport, new McpClientOptions
+                {
+                }, loggerFactory).Result;
+                return mcpClient;
+            });
+
+            var mcpClient = globalServiceProvider.GetRequiredService<IMcpClient>();
+            var tools = mcpClient.ListToolsAsync().Result;
+            //tools = tools.Where(t => mcpPlugins.AcceptedTools.Contains(t.Name) || mcpPlugins.AcceptedTools.Contains("*")).ToList();
+#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            kernel.Plugins.AddFromFunctions($"{kernelSetting.Name}.{kernelSetting.McpServerName}", tools.Select(aiFunction => aiFunction.AsKernelFunction()));
+#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        }
+
+        private static void RegisterKernelPlugins(IServiceProvider globalServiceProvider, Kernel kernel, System.Collections.Generic.IEnumerable<string> plugins)
+        {
+            foreach (var namespaceQualifiedClassName in plugins)
+            {
+                var pluginName = namespaceQualifiedClassName.Split('.').Last();
+                var plugin = globalServiceProvider.GetRequiredKeyedService<KernelPlugin>(pluginName);
+                ArgumentNullException.ThrowIfNull(plugin, $"Plugin {pluginName} could not be cast to KernelPlugin");
+                kernel.Plugins.Add(plugin);
+            }
+        }
     }
+
+
 }

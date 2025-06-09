@@ -1,0 +1,126 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using OpenAI.Chat;
+using playwright.test.generator.Abstractions;
+using playwright.test.generator.IocConventions;
+using playwright.test.generator.Plugins;
+using playwright.test.generator.Settings;
+
+namespace playwright.test.generator.Services;
+
+
+
+
+public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
+{
+        private readonly PlayWrightTestGeneratorOptions _options;
+    private readonly IEnumerable<KernelWrapper> _kernelWrappers;
+    private readonly ITemplatesProvider _templatesProvider;
+
+    public PlayWrightTestGenerator(IOptions<PlayWrightTestGeneratorOptions> options, IEnumerable<KernelWrapper> kernelWrappers, ITemplatesProvider templatesProvider)
+    {
+            _options = options.Value;
+        _kernelWrappers = kernelWrappers;
+        _templatesProvider = templatesProvider;
+        // Initialization code here
+    }
+
+    private static PromptExecutionSettings CreatePromptExecutionSettings(KernelWrapper kernelWrapper)
+    {
+        return kernelWrapper.KernelSettings.Model?.Category switch
+        {
+            ModelCategory.AzureOpenAi => new AzureOpenAIPromptExecutionSettings
+            {
+                Temperature = kernelWrapper.KernelSettings.Temperature
+            },
+            ModelCategory.OpenAi => new OpenAIPromptExecutionSettings
+            {
+                Temperature = kernelWrapper.KernelSettings.Temperature
+            },
+//            ModelCategory.Gemini =>
+//#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//                new GeminiPromptExecutionSettings
+//                {
+//                    Temperature = kernelWrapper.KernelSettings.Temperature
+//                },
+#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+            _ => throw new SemanticKernelException($"Model category {kernelWrapper.KernelSettings.Model?.Category} is not supported"),
+        };
+    }
+
+    private KernelWrapper GetKernelWrapper(string kernelName)
+    {
+        var kernelWrapper = _kernelWrappers.Single(k => k.KernelSettings.IsDefault);
+        if (!string.IsNullOrWhiteSpace(kernelName))
+        {
+            kernelWrapper = _kernelWrappers.SingleOrDefault(k => string.Equals(k.KernelSettings.Name, kernelName, StringComparison.OrdinalIgnoreCase));
+            if (kernelWrapper == null)
+            {
+                throw new SemanticKernelException($"Kernel with name {kernelName} not found.");
+            }
+        }
+        return kernelWrapper;
+    }
+
+    // Add methods to generate Playwright tests based on the provided options and kernel settings
+    public async Task<GenerateTestResult> GenerateTest(GenerateTestRequest generateTestRequest,CancellationToken cancellationToken = default)
+    {
+        var kernelWrapper = GetKernelWrapper(generateTestRequest.KernelName);
+        var chatClient  = kernelWrapper.Kernel.GetRequiredService<IChatCompletionService>();
+        var history = new ChatHistory();    
+        history.AddSystemMessage(_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName));
+        history.AddUserMessage(generateTestRequest.ToUserMessage());
+        var response = await chatClient.GetChatMessageContentsAsync(history, CreatePromptExecutionSettings(kernelWrapper), kernelWrapper.Kernel, cancellationToken);
+        ArgumentNullException.ThrowIfNull(response);
+        if(response.Count==0)
+        {
+            throw new SemanticKernelException($"No response received from the chat client. (response.Count==0)");    
+        }
+        var assistantMessages = history.Where(m => m.Role == AuthorRole.Assistant && m is OpenAIChatMessageContent).Cast<OpenAIChatMessageContent>();
+        var toolCallToPlaywrightTestScriptPlugin = assistantMessages.Where(m => m.ToolCalls.Select(t=> t.FunctionName).Contains(PlaywrightTestScriptPlugin.KernelFunctionName)).ToList();
+        var testScript = "";
+        bool hasToolCallToPlaywrightTestScriptPlugin = toolCallToPlaywrightTestScriptPlugin.Count > 0;  
+        if (toolCallToPlaywrightTestScriptPlugin.Count>0)
+        {
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(toolCallToPlaywrightTestScriptPlugin.Last().ToolCalls.First()?.FunctionArguments);
+            ArgumentNullException.ThrowIfNull(dict);
+            testScript = dict.First().Value;
+        }
+        return new GenerateTestResult
+        {
+            Text = response[response.Count - 1].Content??"",
+            TestScript = testScript,
+            ScriptAvailable =  hasToolCallToPlaywrightTestScriptPlugin
+        };
+    }
+
+}
+
+internal static class GenerateTestRequestExtensions
+{
+    internal static string ToUserMessage(this GenerateTestRequest source) {
+        ArgumentNullException.ThrowIfNull(source);
+        if(source.Steps.Count == 0)
+        {
+            throw new ArgumentException("At least one step is required to generate a test.", nameof(source.Steps));
+        }   
+        var sb = new StringBuilder();
+        foreach(var i in source.Steps.Index())
+        {
+            sb.AppendLine($"{i.Index+1}: {i.Item.StepType.ToString()}: {i.Item.Text}"); 
+        }
+        return sb.ToString();
+    }
+}

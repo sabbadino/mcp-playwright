@@ -8,6 +8,7 @@ namespace playwright.test.generator.Settings
     public class PlayWrightTestGeneratorOptions 
     {
         public SemanticKernelsSettings? SemanticKernelsSettings { get; init; }
+    
     }
     public class SemanticKernelsSettings
     {
@@ -26,6 +27,10 @@ namespace playwright.test.generator.Settings
         public string Name { get; init; } = "";
         public int Temperature { get; init; } = 0;
         public Model? Model { get; init; }
+
+        public string McpServerName { get; init; } = "";
+        public string Command { get; init; } = "";
+        public IList<string> Arguments { get; init; } = new List<string>();
 
 
     }
@@ -48,7 +53,8 @@ namespace playwright.test.generator.Settings
     {
         None,
         OpenAi,
-        AzureOpenAi,
-        Gemini
+        AzureOpenAi
+/*            ,
+        Gemini*/
     }
 }

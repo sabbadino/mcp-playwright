@@ -8,84 +8,39 @@
             }
         }
     },
-    "Elasticsearch": {
-        "GenerativeAI": {
-            "IsNaturalLanguageActive": true,
-            "SemanticKernelsSettings": {
-                "ApiKeys": {
-                    "DevAzureOpenAiApiKey": "fake-api-key",
-                    "DevGeminiApiKey": "fake-api-key",
-                    "DevOpenAiApiKey": "fake-api-key"
-                },
-                //given a SystemMessageName, thisis wehere the fdile are searched for
-                // $"Templates/systemMessage-{name}.txt"
-                // make sure to set the file as "Content" and "Copy Always"
-                "KernelSettings": [
-                    {
-                        "Plugins": [ "TopConsult.FullText.SemanticKernel.Plugins.MetaDataFilterPlugins" ],
-                        "Name": "KernelWithMetadataFilterFunctionAzureOpenAi-MetaDataFilter",
-                        "SystemMessageName": "system-message-metadata-filter-prompt.txt",
-                        "IsDefault": true,
-                        "Temperature": 0,
-                        "Model": {
-                            "Category": "AzureOpenAi",
-                            "DeploymentOrModelName": "gpt-4.1-mini",
-                            "Url": "https://dev-openai-topconsult-sw-oai.openai.azure.com",
-                            "ApiKeyName": "DevAzureOpenAiApiKey"
-                        }
 
-                    },
-                    {
-                        "Plugins": [ "TopConsult.FullText.SemanticKernel.Plugins.WeatherPlugins" ],
-                        "Name": "KernelAzureOpenAi-gpt-4.1",
-                        "SystemMessageName": "system-message-weather-prompt.txt",
-                        "IsDefault": false,
-                        "Temperature": 0,
-                        "Model": {
-                            "Category": "AzureOpenAi",
-                            "DeploymentOrModelName": "gpt-4.1",
-                            "Url": "https://dev-openai-topconsult-sw-oai.openai.azure.com",
-                            "ApiKeyName": "DevAzureOpenAiApiKey"
-                        }
-                    },
-                    {
-                        "Plugins": [ "TopConsult.FullText.SemanticKernel.Plugins.WeatherPlugins" ],
-                        "Name": "KernelAzureOpenAi-gpt-4.1-mini",
-                        "SystemMessageName": "system-message-weather-prompt.txt",
-                        "Temperature": 0,
-                        "Model": {
-                            "Category": "AzureOpenAi",
-                            "DeploymentOrModelName": "gpt-4.1-mini",
-                            "Url": "https://dev-openai-topconsult-sw-oai.openai.azure.com",
-                            "ApiKeyName": "DevAzureOpenAiApiKey"
-                        }
-                    },
-                    {
-                        "Plugins": [ "TopConsult.FullText.SemanticKernel.Plugins.WeatherPlugins" ],
-                        "Name": "KernelAzureOpenAi-Gemini",
-                        "SystemMessageName": "system-message-weather-prompt.txt",
-                        "Temperature": 0,
-                        "Model": {
-                            "RequiresUrl": false,
-                            "Category": "Gemini",
-                            "DeploymentOrModelName": "tbd",
-                            "ApiKeyName": "DevGeminiApiKey"
-                        }
-                    },
-                    {
-                        "Plugins": [ "TopConsult.FullText.SemanticKernel.Plugins.WeatherPlugins" ],
-                        "Name": "KernelAzureOpenAi-OpenAi",
-                        "SystemMessageName": "system-message-weather-prompt.txt",
-                        "Temperature": 0,
-                        "Model": {
-                            "RequiresUrl": false,
-                            "Category": "OpenAi",
-                            "DeploymentOrModelName": "gpt-4.1-mini",
-                            "ApiKeyName": "DevOpenAiApiKey"
-                        }
+    "PlayWrightTestGenerator": {
+
+        "SemanticKernelsSettings": {
+            "ApiKeys": {
+                "DevAzureOpenAiApiKey": "fake-api-key",
+                "DevGeminiApiKey": "fake-api-key",
+                "DevOpenAiApiKey": "fake-api-key"
+            },
+            "LogLevel": "Debug",
+            //given a SystemMessageName, thisis wehere the fdile are searched for
+            // $"Templates/systemMessage-{name}.txt"
+            // make sure to set the file as "Content" and "Copy Always"
+            "KernelSettings": [
+
+                {
+                    "McpServerName": "playwright-ms",
+                    "Command": "npx",
+                    "Arguments": [ "@playwright/mcp@latest", "--isolated" ],
+                    "Plugins": [ "playwright.test.generator.Plugins.PlaywrightTestScriptPlugin" ],
+                    "Name": "KernelAzureOpenAi-gpt-4.1",
+                    "SystemMessageName": "ms-mcp-prompt-1.md",
+                    "IsDefault": false,
+                    "Temperature": 0,
+                    "Model": {
+                        "Category": "AzureOpenAi",
+                        "DeploymentOrModelName": "gpt-4.1",
+                        "Url": "https://dev-openai-topconsult-sw-oai.openai.azure.com",
+                        "ApiKeyName": "DevAzureOpenAiApiKey"
                     }
-                ]
-            }
+                }
+            ]
         }
     }
+}
 }

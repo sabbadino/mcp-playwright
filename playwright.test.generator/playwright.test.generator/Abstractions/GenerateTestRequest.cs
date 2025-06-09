@@ -8,13 +8,15 @@ namespace playwright.test.generator.Abstractions
 {
     public record GenerateTestRequest
     {
-        public string Id { get; init; } = "";
-        public string Name { get; init; } = "";
+        public required string Id { get; init; } = "";
+        public required string Name { get; init; } = "";
         public string Description { get; init; } = "";
 
-        public List<string> Steps { get; init; } = new List<string>();
+        public List<ScenarioStep> Steps { get; init; } = new List<ScenarioStep>();
 
         public string KernelName { get; init; } = "";
+
+       
     }
 
     public record  ScenarioStep
@@ -23,5 +25,10 @@ namespace playwright.test.generator.Abstractions
         public string Text { get; init; } = "";
     }
 
-    public record GenerateTestResult { }
+    public record GenerateTestResult
+    {
+        public required string Text { get; init; } = "";
+        public required string TestScript { get; init; } = "";
+        public required  bool ScriptAvailable { get; init; }
+    }
 }
