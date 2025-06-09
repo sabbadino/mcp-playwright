@@ -79,13 +79,13 @@ namespace playwright.test.generator
             }
 
            
-            foreach (var kernelSetting in kernelsSettings.KernelSettings)
+            foreach (var kernelSetting in kernelsSettings.KernelSettings.Index())
             {
                 services.AddTransient(globalServiceProvider =>
                 {
                     // create kernel 
                     var skBuilder = Kernel.CreateBuilder();
-                    ConfigureKernel(skBuilder, kernelSetting, kernelsSettings);
+                    ConfigureKernel(skBuilder, kernelsSettings, kernelSetting.Item);
                     if (kernelsSettings.LogLevel != null)
                     {
                         skBuilder.Services.AddLogging(l => l.SetMinimumLevel(kernelsSettings.LogLevel.Value).AddConsole());
@@ -93,14 +93,14 @@ namespace playwright.test.generator
                     var kernel = skBuilder.Build();
 
                     // register internal the plugin for this kernel 
-                    RegisterKernelPlugins(globalServiceProvider, kernel, kernelSetting.Plugins);
+                    RegisterKernelPlugins(globalServiceProvider, kernel, kernelSetting.Item.Plugins);
 
                     // register mcp plugin for this kernel 
-                    if (!string.IsNullOrEmpty(kernelSetting.McpServerName)) 
+                    if (!string.IsNullOrEmpty(kernelSetting.Item.McpServerName)) 
                     { 
-                        AddToolsFromMcpClient(services, globalServiceProvider, kernel, kernelSetting);
+                        AddToolsFromMcpClient(kernel, kernelSetting.Index, kernelSetting.Item);
                     }
-                    return new KernelWrapper { KernelSettings = kernelSetting, Kernel = kernel };
+                    return new KernelWrapper { KernelSettings = kernelSetting.Item, Kernel = kernel };
                 });
             }
             services.RegisterByConvention<PlayWrightTestGeneratorOptions>();
@@ -108,15 +108,15 @@ namespace playwright.test.generator
             return services;
         }
 
-        private static void ConfigureKernel(IKernelBuilder skBuilder, dynamic kernelSetting, dynamic kernelsSettings)
+        private static void ConfigureKernel(IKernelBuilder skBuilder, SemanticKernelsSettings semanticKernelsSettings, KernelSettings kernelSettings)
         {
-            var model = kernelSetting.Model;
+            var model = kernelSettings.Model;
             ArgumentNullException.ThrowIfNull(model);
             string deploymentOrModelName = model.DeploymentOrModelName;
             string? url = model.Url;
             string apiKeyName = model.ApiKeyName;
             var category = model.Category;
-            if (!kernelsSettings.ApiKeys.TryGetValue(apiKeyName, out string apiKeyValue))
+            if (!semanticKernelsSettings.ApiKeys.TryGetValue(apiKeyName, out string apiKeyValue))
             {
                 throw new Exception($"Could not find key {apiKeyName}");
             }
@@ -126,11 +126,11 @@ namespace playwright.test.generator
             }
             if (category == ModelCategory.AzureOpenAi)
             {
-                skBuilder.AddAzureOpenAIChatClient(deploymentOrModelName, url, apiKeyValue);
+                skBuilder.AddAzureOpenAIChatCompletion(deploymentOrModelName, url, apiKeyValue);
             }
             else if (category == ModelCategory.OpenAi)
             {
-                skBuilder.AddOpenAIChatClient(deploymentOrModelName, apiKeyValue);
+                skBuilder.AddOpenAIChatCompletion(deploymentOrModelName, apiKeyValue);
             }
             // TODO : add Antropic and google , register as ichatclient (ms.ai.extensions)
 //            else if (model.Category == ModelCategory.Gemini)
@@ -141,7 +141,7 @@ namespace playwright.test.generator
 //            }
         }
 
-        private static void AddToolsFromMcpClient(IServiceCollection services, IServiceProvider globalServiceProvider, Kernel kernel, dynamic kernelSetting)
+        private static void AddToolsFromMcpClient(Kernel kernel, int index,KernelSettings kernelSetting)
         {
             var clientTransport = new StdioClientTransport(new()
             {
@@ -149,24 +149,16 @@ namespace playwright.test.generator
                 Command = kernelSetting.Command,//"npx",
                 Arguments = kernelSetting.Arguments //["@playwright/mcp@latest", "--isolated"],
             });
-            services.AddSingleton((serviceProvider) =>
-            {
-                var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-                var mcpClient = McpClientFactory.CreateAsync(clientTransport, new McpClientOptions
-                {
-                }, loggerFactory).Result;
-                return mcpClient;
-            });
+            var mcpClient = McpClientFactory.CreateAsync(clientTransport, new McpClientOptions{}).Result;
 
-            var mcpClient = globalServiceProvider.GetRequiredService<IMcpClient>();
             var tools = mcpClient.ListToolsAsync().Result;
             //tools = tools.Where(t => mcpPlugins.AcceptedTools.Contains(t.Name) || mcpPlugins.AcceptedTools.Contains("*")).ToList();
 #pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            kernel.Plugins.AddFromFunctions($"{kernelSetting.Name}.{kernelSetting.McpServerName}", tools.Select(aiFunction => aiFunction.AsKernelFunction()));
+            kernel.Plugins.AddFromFunctions($"{index}", tools.Select(aiFunction => aiFunction.AsKernelFunction()));
 #pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
 
-        private static void RegisterKernelPlugins(IServiceProvider globalServiceProvider, Kernel kernel, System.Collections.Generic.IEnumerable<string> plugins)
+        private static void RegisterKernelPlugins(IServiceProvider globalServiceProvider, Kernel kernel, IEnumerable<string> plugins)
         {
             foreach (var namespaceQualifiedClassName in plugins)
             {

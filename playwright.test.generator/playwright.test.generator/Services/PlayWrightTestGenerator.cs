@@ -82,14 +82,16 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         var history = new ChatHistory();    
         history.AddSystemMessage(_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName));
         history.AddUserMessage(generateTestRequest.ToUserMessage());
-        var response = await chatClient.GetChatMessageContentsAsync(history, CreatePromptExecutionSettings(kernelWrapper), kernelWrapper.Kernel, cancellationToken);
+        var promptExecutionSettings = CreatePromptExecutionSettings(kernelWrapper);
+        promptExecutionSettings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
+        var response = await chatClient.GetChatMessageContentsAsync(history, promptExecutionSettings, kernelWrapper.Kernel, cancellationToken);
         ArgumentNullException.ThrowIfNull(response);
         if(response.Count==0)
         {
             throw new SemanticKernelException($"No response received from the chat client. (response.Count==0)");    
         }
         var assistantMessages = history.Where(m => m.Role == AuthorRole.Assistant && m is OpenAIChatMessageContent).Cast<OpenAIChatMessageContent>();
-        var toolCallToPlaywrightTestScriptPlugin = assistantMessages.Where(m => m.ToolCalls.Select(t=> t.FunctionName).Contains(PlaywrightTestScriptPlugin.KernelFunctionName)).ToList();
+        var toolCallToPlaywrightTestScriptPlugin = assistantMessages.Where(m => m.ToolCalls.Select(t=> t.FunctionName).Contains($"{nameof(PlaywrightTestScriptPlugin)}-{PlaywrightTestScriptPlugin.KernelFunctionName}")).ToList();
         var testScript = "";
         bool hasToolCallToPlaywrightTestScriptPlugin = toolCallToPlaywrightTestScriptPlugin.Count > 0;  
         if (toolCallToPlaywrightTestScriptPlugin.Count>0)
@@ -117,7 +119,8 @@ internal static class GenerateTestRequestExtensions
             throw new ArgumentException("At least one step is required to generate a test.", nameof(source.Steps));
         }   
         var sb = new StringBuilder();
-        foreach(var i in source.Steps.Index())
+        sb.AppendLine("scenario  steps:"); 
+        foreach (var i in source.Steps.Index())
         {
             sb.AppendLine($"{i.Index+1}: {i.Item.StepType.ToString()}: {i.Item.Text}"); 
         }

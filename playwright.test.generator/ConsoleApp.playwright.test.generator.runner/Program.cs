@@ -1,5 +1,6 @@
 ﻿
 
+using System.Diagnostics;
 using System.Text.Json;
 using Azure;
 using Microsoft.Extensions.Configuration;
@@ -9,11 +10,15 @@ using OllamaSharp;
 using playwright.test.generator;
 using playwright.test.generator.Abstractions;
 using playwright.test.generator.IocConventions;
-using playwright.test.generator.Services;
+using playwright.test.generator.Services; 
 using static System.Net.Mime.MediaTypeNames;
+
+
+await SetupPlayWright();
+
+
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-builder.Configuration
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+builder.Configuration 
     .AddUserSecrets<Program>()
     .AddEnvironmentVariables()
     .AddCommandLine(args);
@@ -41,6 +46,56 @@ var res = await playWrightTestGenerator.GenerateTest(new GenerateTestRequest
     },  
 });
 
-Console.WriteLine(JsonSerializer.Serialize(res));  
+Console.WriteLine($"run result: {JsonSerializer.Serialize(res)}");
 
+async Task SetupPlayWright() {
+    try
+    {
 
+        var ec = await RunCommand("npm.cmd init -y");
+        Console.WriteLine($"npm init exit code: {ec}"); 
+        ec = await RunCommand("npm.cmd install --save-dev @playwright/test");
+        Console.WriteLine($"npm install @playwright/test exit code: {ec}");
+
+        ec = await RunCommand("npm.cmd install --save-dev @playwright/test");
+        Console.WriteLine($"npm install @playwright/test exit code: {ec}");
+        ec = await RunCommand("npx.cmd playwright install");
+        Console.WriteLine($"npx playwright install exit code: {ec}");
+
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while executing the Playwright test script: {ex.ToString()}");
+    }
+}
+
+static async Task<int> RunCommand(string commandToRun)
+{
+    var workingDirectory = Directory.GetCurrentDirectory();
+
+    var processStartInfo = new ProcessStartInfo()
+    {
+        FileName = "cmd",
+        RedirectStandardOutput = true,
+        RedirectStandardInput = true,
+        RedirectStandardError = true,
+        WorkingDirectory = workingDirectory
+    };
+
+    var process = Process.Start(processStartInfo);
+
+    Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+    Task<string> errorTask = process.StandardError.ReadToEndAsync();
+
+    if (process == null)
+    {
+        throw new Exception("Process should not be null.");
+    }
+
+    process.StandardInput.WriteLine($"{commandToRun} & exit");
+    await Task.WhenAll(outputTask, errorTask);
+    await process.WaitForExitAsync();
+
+    Console.WriteLine($"out {outputTask.Result} error: {errorTask.Result}");
+    return process.ExitCode; // Return the exit code of the process 
+}

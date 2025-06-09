@@ -21,6 +21,6 @@
 		<PackageReference Include="OllamaSharp.ModelContextProtocol" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Resource Include="Templates\ms-mcp-prompt-1.md" />
+	  <EmbeddedResource Include="Templates\ms-mcp-prompt-1.md" />
 	</ItemGroup>
 </Project>
