@@ -10,6 +10,7 @@
     <None Remove="Templates\ms-mcp-prompt-1.md" />
   </ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Anthropic.SDK" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.Logging" />
@@ -18,8 +19,8 @@
 		<PackageReference Include="Microsoft.SemanticKernel" />
 		<PackageReference Include="Microsoft.Extensions.Options" />
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
-    <PackageReference Include="ModelContextProtocol"  />
-    <PackageReference Include="ModelContextProtocol.AspNetCore"  />
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
 	</ItemGroup>
 	<ItemGroup>
 	  <EmbeddedResource Include="Templates\ms-mcp-prompt-3.md" />

@@ -53,8 +53,7 @@ namespace playwright.test.generator.Settings
     {
         None,
         OpenAi,
-        AzureOpenAi
-/*            ,
-        Gemini*/
+        AzureOpenAi,
+        Anthropic
     }
 }

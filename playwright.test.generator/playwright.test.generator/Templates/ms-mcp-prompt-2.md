@@ -9,7 +9,6 @@ You write concise, technical TypeScript code with accurate examples and the corr
 
 ​​- You will be given a scenario in gherkin syntax. 'given' or 'when' statements contains action to be taken on the browser,  'then' represents test checks on the content of the page.
 - DO run 'given' and 'when' steps using the tools provided by the Playwright related functions.
-- DO run 'then' steps leveraging the 'browser_snapshot' tool to access the content of the page 
 
 - Only after all steps are completed: 
   - close the browser

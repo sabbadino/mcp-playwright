@@ -38,7 +38,7 @@ builder.Logging.AddConsole();
 //      b.AddHttpClientInstrumentation().AddConsoleExporter()
 //       .SetResourceBuilder(ResourceBuilder
 //                .CreateDefault()
-//                .AddService("ConsoleApp")) 
+//                .AddService("ConsoleApp"))
 //      .AddSource("playwright.test.generator.runner")
 //      .SetSampler(new AlwaysOnSampler());
 //  }).WithLogging(builder =>

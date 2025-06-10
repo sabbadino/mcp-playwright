@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Anthropic.SDK;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -130,15 +131,20 @@ namespace playwright.test.generator
             {
                 skBuilder.AddOpenAIChatClient(deploymentOrModelName, apiKeyValue);
             }
-            // TODO : add Antropic and google , register as ichatclient (ms.ai.extensions)
-//            else if (model.Category == ModelCategory.Gemini)
-//            {
-//#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-//                skBuilder.AddGoogleAIGeminiChatCompletion(model.DeploymentOrModelName, apiKeyValue);
-//#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-//            }
+            else if (category == ModelCategory.Anthropic)
+            {
+                IChatClient client = new AnthropicClient(apiKeyValue).Messages
+                         .AsBuilder()
+                         .UseFunctionInvocation()
+                         .ConfigureOptions( o=> {
+                             o.ModelId = deploymentOrModelName;
+                             o.MaxOutputTokens= 1000;
+                         })  
+                         .Build();
+                skBuilder.Services.AddSingleton(client); 
+            }
 
-            
+
         }
 
         private static void AddToolsFromMcpClient(IServiceProvider globalServiceProvider,Kernel kernel, int index,KernelSettings kernelSetting)
