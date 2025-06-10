@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using playwright.test.generator;
 using playwright.test.generator.Abstractions;
@@ -28,19 +29,22 @@ builder.Configuration
     .AddCommandLine(args);
 
 builder.Services.AddPlayWrightTestGeneratorOptions(options => builder.Configuration.Bind("PlayWrightTestGenerator", options));
+builder.Logging.AddConsole();
+//builder.Logging.ClearProviders();
 
-builder.Logging.ClearProviders();
-
-builder.Services.AddOpenTelemetry()
-  .WithTracing(b =>
-  {
-      b.AddHttpClientInstrumentation().AddConsoleExporter()
-      .AddSource("ConsoleApp.playwright.test.generator.runner")
-      .SetSampler(new AlwaysOnSampler());
-  }).WithLogging(builder =>
-  {
-      builder.AddConsoleExporter();
-  });
+//builder.Services.AddOpenTelemetry()
+//  .WithTracing(b =>
+//  {
+//      b.AddHttpClientInstrumentation().AddConsoleExporter()
+//       .SetResourceBuilder(ResourceBuilder
+//                .CreateDefault()
+//                .AddService("ConsoleApp")) 
+//      .AddSource("playwright.test.generator.runner")
+//      .SetSampler(new AlwaysOnSampler());
+//  }).WithLogging(builder =>
+//  {
+//      builder.AddConsoleExporter();
+//  });
 
 
 var app = builder.Build();
@@ -49,7 +53,7 @@ logger.LogInformation("Starting Playwright test generation runner.");
 var runner= app.Services.GetRequiredService<ICommandRunnerService>();
 await runner.SetupPlayWright(runner, logger);
 var playWrightTestGenerator = app.Services.GetRequiredService<IPlayWrightTestGenerator>();
-var res = await playWrightTestGenerator.GenerateTest(new GenerateTestRequest
+var res = await playWrightTestGenerator.GenerateTestIChatClient(new GenerateTestRequest
 {
     Id = "test-id-123",
     Name = "Test Scenario",

@@ -17,7 +17,7 @@ namespace playwright.test.generator.Settings
         public List<KernelSettings> KernelSettings { get; init; } = new();
 
         public Dictionary<string, string> ApiKeys { get; init; } = new();
-        public LogLevel? LogLevel { get; internal set; }
+        public LogLevel? LogLevel { get; init; }
     }
     public class KernelSettings
     {
