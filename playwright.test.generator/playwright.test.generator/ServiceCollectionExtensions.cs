@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,7 +75,7 @@ namespace playwright.test.generator
                     return KernelPluginFactory.CreateFromType(type, pluginName, serviceProvider);
                 });
             }
-
+         
            
             foreach (var kernelSetting in kernelsSettings.KernelSettings.Index())
             {
@@ -123,11 +124,11 @@ namespace playwright.test.generator
             }
             if (category == ModelCategory.AzureOpenAi)
             {
-                skBuilder.AddAzureOpenAIChatCompletion(deploymentOrModelName, url, apiKeyValue);
+                skBuilder.AddAzureOpenAIChatClient(deploymentOrModelName, url, apiKeyValue);
             }
             else if (category == ModelCategory.OpenAi)
             {
-                skBuilder.AddOpenAIChatCompletion(deploymentOrModelName, apiKeyValue);
+                skBuilder.AddOpenAIChatClient(deploymentOrModelName, apiKeyValue);
             }
             // TODO : add Antropic and google , register as ichatclient (ms.ai.extensions)
 //            else if (model.Category == ModelCategory.Gemini)
@@ -136,6 +137,8 @@ namespace playwright.test.generator
 //                skBuilder.AddGoogleAIGeminiChatCompletion(model.DeploymentOrModelName, apiKeyValue);
 //#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 //            }
+
+            
         }
 
         private static void AddToolsFromMcpClient(IServiceProvider globalServiceProvider,Kernel kernel, int index,KernelSettings kernelSetting)
