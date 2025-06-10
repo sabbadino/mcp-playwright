@@ -30,5 +30,8 @@ namespace playwright.test.generator.Abstractions
         public required string Text { get; init; } = "";
         public required string TestScript { get; init; } = "";
         public required  bool ScriptAvailable { get; init; }
+        public required string Id { get; init; }
+        public required bool TestPass { get; init; }
+        public string ErrorContent { get; init; } = "";
     }
 }

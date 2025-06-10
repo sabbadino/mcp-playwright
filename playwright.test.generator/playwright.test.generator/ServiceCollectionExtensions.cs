@@ -98,7 +98,7 @@ namespace playwright.test.generator
                     // register mcp plugin for this kernel 
                     if (!string.IsNullOrEmpty(kernelSetting.Item.McpServerName)) 
                     { 
-                        AddToolsFromMcpClient(kernel, kernelSetting.Index, kernelSetting.Item);
+                        AddToolsFromMcpClient(globalServiceProvider, kernel, kernelSetting.Index, kernelSetting.Item);
                     }
                     return new KernelWrapper { KernelSettings = kernelSetting.Item, Kernel = kernel };
                 });
@@ -141,15 +141,16 @@ namespace playwright.test.generator
 //            }
         }
 
-        private static void AddToolsFromMcpClient(Kernel kernel, int index,KernelSettings kernelSetting)
+        private static void AddToolsFromMcpClient(IServiceProvider globalServiceProvider,Kernel kernel, int index,KernelSettings kernelSetting)
         {
+            var loggerFactory = globalServiceProvider.GetRequiredService<ILoggerFactory>();
             var clientTransport = new StdioClientTransport(new()
             {
                 Name = kernelSetting.McpServerName, //"playwright-ms",
                 Command = kernelSetting.Command,//"npx",
                 Arguments = kernelSetting.Arguments //["@playwright/mcp@latest", "--isolated"],
             });
-            var mcpClient = McpClientFactory.CreateAsync(clientTransport, new McpClientOptions{}).Result;
+            var mcpClient = McpClientFactory.CreateAsync(clientTransport, new McpClientOptions{},loggerFactory: loggerFactory).Result;
 
             var tools = mcpClient.ListToolsAsync().Result;
             //tools = tools.Where(t => mcpPlugins.AcceptedTools.Contains(t.Name) || mcpPlugins.AcceptedTools.Contains("*")).ToList();

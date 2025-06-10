@@ -8,7 +8,7 @@ namespace playwright.test.generator.Settings
     public class PlayWrightTestGeneratorOptions 
     {
         public SemanticKernelsSettings? SemanticKernelsSettings { get; init; }
-    
+        public int ScriptFixRetries { get; init; } = 3;
     }
     public class SemanticKernelsSettings
     {

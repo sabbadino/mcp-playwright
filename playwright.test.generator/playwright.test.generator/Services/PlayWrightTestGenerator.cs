@@ -80,7 +80,7 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         var kernelWrapper = GetKernelWrapper(generateTestRequest.KernelName);
         var chatClient  = kernelWrapper.Kernel.GetRequiredService<IChatCompletionService>();
         var history = new ChatHistory();    
-        history.AddSystemMessage(_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName));
+        history.AddSystemMessage(_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName).Replace(TestGeneratorsConstants.GenerateRetriesNumberPlaceholder,_options.ScriptFixRetries.ToString()));
         history.AddUserMessage(generateTestRequest.ToUserMessage());
         var promptExecutionSettings = CreatePromptExecutionSettings(kernelWrapper);
         promptExecutionSettings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
@@ -100,11 +100,24 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
             ArgumentNullException.ThrowIfNull(dict);
             testScript = dict.First().Value;
         }
+        var errorContent= string.Empty;    
+        var testPass = response[response.Count - 1].Content?.StartsWith("TEST OK", StringComparison.OrdinalIgnoreCase) ?? false;
+        if(!testPass)
+        {
+            var errorFiles = Directory.GetFiles("./test-results", "error-context.md", SearchOption.AllDirectories);
+            if (errorFiles.Length > 0)
+            {
+                errorContent = await File.ReadAllTextAsync(errorFiles[0]);
+            }   
+        }
         return new GenerateTestResult
         {
+            Id = generateTestRequest.Id,    
             Text = response[response.Count - 1].Content??"",
             TestScript = testScript,
-            ScriptAvailable =  hasToolCallToPlaywrightTestScriptPlugin
+            ScriptAvailable =  hasToolCallToPlaywrightTestScriptPlugin,
+            TestPass = testPass,
+            ErrorContent = errorContent,    
         };
     }
 

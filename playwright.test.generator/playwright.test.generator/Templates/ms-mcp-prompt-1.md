@@ -7,5 +7,7 @@
 - Only after all steps are completed: 
   - close the browser
   - emit a playwright TypeScript test that uses @playwright/test based on message history. 
-  - if you are reported that the emitted test script has errors or the test fails, try to fix it, but give up after 4 times
+  - if you are reported that the emitted test script has errors or the test fails, try to fix it, but give up after {{generate_retries}} times
 
+  - IMPORTANT INSTRUCTIONS ABOUT SCRIPT GENERATION
+        - use exact string match, do not use regex, unless explicitly requested
