@@ -57,7 +57,7 @@ var res = await playWrightTestGenerator.GenerateTest(new GenerateTestRequest
     Steps = new List<ScenarioStep>
     {
         new ScenarioStep {StepType = StepType.Given,  Text = "you open  'https://executeautomation.github.io/mcp-playwright/docs/intro'" },
-        new ScenarioStep {StepType = StepType.Then, Text = "verify that the link has text 'Release Notes' text is present on the page"},
+        new ScenarioStep {StepType = StepType.Then, Text = "verify that there is a link with exact text 'Release Notes' present on the sidebar"},
         new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Release Notes' link"},
         new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Version 1.0.3' link"},
         new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'start_codegen_session: Start a new session to record Playwright actions'"},

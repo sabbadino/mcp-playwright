@@ -45,6 +45,7 @@ public class PlaywrightTestScriptPlugin
                 if (errorFiles.Length > 0)
                 {
                     var errorContent = await File.ReadAllTextAsync(errorFiles[0]);
+                    _logger.LogWarning($"Error context: {errorContent}");    
                     return $"TEST KO. Playwright test script execution failed with exit code {ret.ExitCode}. StandardOutput: {ret.stdOut} {stdErrorString} Error context: {errorContent}";
                 }
             }   
