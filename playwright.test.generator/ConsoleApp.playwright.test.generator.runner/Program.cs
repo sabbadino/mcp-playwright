@@ -53,7 +53,7 @@ logger.LogInformation("Starting Playwright test generation runner.");
 var runner= app.Services.GetRequiredService<ICommandRunnerService>();
 await runner.SetupPlayWright(runner, logger);
 var playWrightTestGenerator = app.Services.GetRequiredService<IPlayWrightTestGenerator>();
-var res = await playWrightTestGenerator.GenerateTest(new GenerateTestRequest
+var res = await playWrightTestGenerator.GenerateTestIChatClient(new GenerateTestRequest
 {
     Id = "test-id-123",
     Name = "Test Scenario",

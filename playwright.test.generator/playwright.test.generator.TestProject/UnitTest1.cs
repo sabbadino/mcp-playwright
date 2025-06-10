@@ -69,7 +69,7 @@ namespace playwright.test.generator.TestProject
                 },
         };
             var playWrightTestGenerator = _serviceProvider.GetRequiredService<IPlayWrightTestGenerator>();
-            var res = await playWrightTestGenerator.GenerateTest(req, CancellationToken.None);
+            var res = await playWrightTestGenerator.GenerateTestIChatClient(req, CancellationToken.None);
 
             Assert.True(res.TestPass,"because the test scenario should pass based on the provided steps.");
             Assert.True(res.ScriptAvailable, "because the script should be Available");

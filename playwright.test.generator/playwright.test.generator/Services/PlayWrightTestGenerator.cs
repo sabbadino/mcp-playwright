@@ -38,7 +38,7 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
     private static ChatOptions CreateChatOptions(KernelWrapper kernelWrapper)
     {
 #pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        IEnumerable<AIFunction> aiFunctions = kernelWrapper.Kernel.Plugins.SelectMany(kp => kp.AsAIFunctions());
+        IEnumerable<AIFunction> aiFunctions = kernelWrapper.Kernel.Plugins.SelectMany(kp => kp.AsAIFunctions(kernelWrapper.Kernel));
 #pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         return new ChatOptions { Temperature = kernelWrapper.KernelSettings.Temperature, ToolMode = ChatToolMode.Auto
             , Tools = [.. aiFunctions ]
@@ -60,7 +60,7 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
     }
 
     // Add methods to generate Playwright tests based on the provided options and kernel settings
-    public async Task<GenerateTestResult> GenerateTest(GenerateTestRequest generateTestRequest,CancellationToken cancellationToken = default)
+    public async Task<GenerateTestResult> GenerateTestIChatClient(GenerateTestRequest generateTestRequest,CancellationToken cancellationToken = default)
     {
         var kernelWrapper = GetKernelWrapper(generateTestRequest.KernelName);
         var chatClient  = kernelWrapper.Kernel.GetRequiredService<IChatClient>();
@@ -70,71 +70,118 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         var chatOptions = CreateChatOptions(kernelWrapper);
         var response = await chatClient.GetResponseAsync(history,chatOptions, cancellationToken);
 
-        /*
-         * dbug: Microsoft.Extensions.AI.FunctionInvokingChatClient[807273242]
-      Invoking 0_browser_install.
-fail: Microsoft.Extensions.AI.FunctionInvokingChatClient[1784604714]
-      0_browser_install invocation failed.
-      System.InvalidOperationException: No service for type 'System.Collections.Generic.IEnumerable`1[Microsoft.SemanticKernel.KernelPlugin]' has been registered.
-         at Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService(IServiceProvider provider, Type serviceType)
-         at Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService[T](IServiceProvider provider)
-         at Microsoft.SemanticKernel.Kernel..ctor(IServiceProvider services, KernelPluginCollection plugins)
-         at Microsoft.SemanticKernel.KernelFunction.InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken cancellationToken)
-         at Microsoft.Extensions.AI.KernelFunctionInvokingChatClient.InvokeFunctionAsync(FunctionInvocationContext context, CancellationToken cancellationToken)
-         at Microsoft.Extensions.AI.FunctionInvokingChatClient.InstrumentedInvokeFunctionAsync(FunctionInvocationContext context, CancellationToken cancellationToken)
-dbug: Microsoft.Extensions.AI.FunctionInvokingChatClient[1098781176]
-      0_browser_install invocation completed. Duration: 00:00:00.0958642
-info: Microsoft.Extensions.AI.OpenTelemetryChatClient[1]
-      {}
-info: Microsoft.Extensions.AI.OpenTelemetryChatClient[1]
-      {}
-info: Microsoft.Extensions.AI.OpenTelemetryChatClient[1]
-      {"tool_calls":[{"id":"call_g18u4TQDAyrgKKWZqeDOgRws","type":"function","function":{"name":"0_browser_navigate"}}]}
-info: Microsoft.Extensions.AI.OpenTelemetryChatClient[1]
-      {"id":"call_g18u4TQDAyrgKKWZqeDOgRws"}
-info: Microsoft.Extensions.AI.OpenTelemetryChatClient[1]
-      {"tool_calls":[{"id":"call_x2MeHaM6sNWK3A6NuEdC3K7p","type":"function","function":{"name":"0_browser_install"}}]}
-info: Microsoft.Extensions.AI.OpenTelemetryChatClient[1]
-      {"id":"call_x2MeHaM6sNWK3A6NuEdC3K7p"}
-         */
+     
+     
 
         ArgumentNullException.ThrowIfNull(response);
         if(response.Messages.Count==0)
         {
             throw new SemanticKernelException($"No response received from the chat client. (response.Messages.Count==0)");    
         }
-        //var assistantMessages = history.Where(m => m.Role == AuthorRole.Assistant && m is OpenAIChatMessageContent).Cast<OpenAIChatMessageContent>();
-        //var toolCallToPlaywrightTestScriptPlugin = assistantMessages.Where(m => m.ToolCalls.Select(t=> t.FunctionName).Contains($"{nameof(PlaywrightTestScriptPlugin)}-{PlaywrightTestScriptPlugin.KernelFunctionName}")).ToList();
-        //var testScript = "";
-        //bool hasToolCallToPlaywrightTestScriptPlugin = toolCallToPlaywrightTestScriptPlugin.Count > 0;  
-        //if (toolCallToPlaywrightTestScriptPlugin.Count>0)
-        //{
-        //    var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(toolCallToPlaywrightTestScriptPlugin.Last().ToolCalls.First()?.FunctionArguments);
-        //    ArgumentNullException.ThrowIfNull(dict);
-        //    testScript = dict.First().Value;
-        //}
-        //var errorContent= string.Empty;    
-        //var testPass = response[response.Count - 1].Content?.StartsWith("TEST OK", StringComparison.OrdinalIgnoreCase) ?? false;
-        //if(!testPass)
-        //{
-        //    var errorFiles = Directory.GetFiles("./test-results", "error-context.md", SearchOption.AllDirectories);
-        //    if (errorFiles.Length > 0)
-        //    {
-        //        errorContent = await File.ReadAllTextAsync(errorFiles[0]);
-        //    }   
-        //}
-        //return new GenerateTestResult
-        //{
-        //    Id = generateTestRequest.Id,    
-        //    Text = response[response.Count - 1].Content??"",
-        //    TestScript = testScript,
-        //    ScriptAvailable =  hasToolCallToPlaywrightTestScriptPlugin,
-        //    TestPass = testPass,
-        //    ErrorContent = errorContent,    
-        //};
-        return null;
+        var lastFunctionCallContext = response.Messages.LastOrDefault(m => m.Role == ChatRole.Assistant && m.Contents.LastOrDefault() is Microsoft.Extensions.AI.FunctionCallContent cc)?.Contents.LastOrDefault(c => {
+            if (c is Microsoft.Extensions.AI.FunctionCallContent x) {
+                return x.Name.EndsWith(PlaywrightTestScriptPlugin.KernelFunctionName, StringComparison.OrdinalIgnoreCase);
+            }
+            return false; }) as Microsoft.Extensions.AI.FunctionCallContent;
+        var testScript = "";
+        bool hasToolCallToPlaywrightTestScriptPlugin = false;
+        if (lastFunctionCallContext != null) {
+            testScript = lastFunctionCallContext.Arguments?.First().Value as string ??"";
+            hasToolCallToPlaywrightTestScriptPlugin = true;
+        }
+     
+        var errorContent = string.Empty;
+        var reply = response.Messages[response.Messages.Count - 1].Text;
+        var testPass = reply.StartsWith("TEST OK", StringComparison.OrdinalIgnoreCase) ;
+        if (!testPass)
+        {
+            var errorFiles = Directory.GetFiles("./test-results", "error-context.md", SearchOption.AllDirectories);
+            if (errorFiles.Length > 0)
+            {
+                errorContent = await File.ReadAllTextAsync(errorFiles[0]);
+}
+        }
+        return new GenerateTestResult
+        {
+            Id = generateTestRequest.Id,
+            Text = reply,
+            TestScript = testScript,
+            ScriptAvailable = hasToolCallToPlaywrightTestScriptPlugin,
+            TestPass = testPass,
+            ErrorContent = errorContent,
+        };
     }
 
+    private static PromptExecutionSettings CreatePromptExecutionSettings(KernelWrapper kernelWrapper)
+    {
+        return kernelWrapper.KernelSettings.Model?.Category switch
+        {
+            ModelCategory.AzureOpenAi => new AzureOpenAIPromptExecutionSettings
+            {
+                Temperature = kernelWrapper.KernelSettings.Temperature
+            },
+            ModelCategory.OpenAi => new OpenAIPromptExecutionSettings
+            {
+                Temperature = kernelWrapper.KernelSettings.Temperature
+            },
+            //            ModelCategory.Gemini =>
+            //#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            //                new GeminiPromptExecutionSettings
+            //                {
+            //                    Temperature = kernelWrapper.KernelSettings.Temperature
+            //                },
+#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+            _ => throw new SemanticKernelException($"Model category {kernelWrapper.KernelSettings.Model?.Category} is not supported"),
+        };
+    }
+    public async Task<GenerateTestResult> GenerateTestIChatClientCompletion(GenerateTestRequest generateTestRequest, CancellationToken cancellationToken = default)
+    {
+        var kernelWrapper = GetKernelWrapper(generateTestRequest.KernelName);
+        var chatClient = kernelWrapper.Kernel.GetRequiredService<IChatCompletionService>();
+        var history = new ChatHistory();
+        history.AddSystemMessage(_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName).Replace(TestGeneratorsConstants.GenerateRetriesNumberPlaceholder, _options.ScriptFixRetries.ToString()));
+        history.AddUserMessage(generateTestRequest.ToUserMessage());
+        var promptExecutionSettings = CreatePromptExecutionSettings(kernelWrapper);
+        promptExecutionSettings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
+        var response = await chatClient.GetChatMessageContentsAsync(history, promptExecutionSettings, kernelWrapper.Kernel, cancellationToken);
+        ArgumentNullException.ThrowIfNull(response);
+        if (response.Count == 0)
+        {
+            throw new SemanticKernelException($"No response received from the chat client. (response.Count==0)");
+        }
+        var assistantMessages = history.Where(m => m.Role == AuthorRole.Assistant && m is OpenAIChatMessageContent).Cast<OpenAIChatMessageContent>();
+        var toolCallToPlaywrightTestScriptPlugin = assistantMessages.Where(m => m.ToolCalls.Select(t => t.FunctionName).Contains($"{nameof(PlaywrightTestScriptPlugin)}-{PlaywrightTestScriptPlugin.KernelFunctionName}")).ToList();
+        var testScript = "";
+        bool hasToolCallToPlaywrightTestScriptPlugin=false;
+        if (toolCallToPlaywrightTestScriptPlugin.Count > 0)
+        {
+            hasToolCallToPlaywrightTestScriptPlugin = true;
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(toolCallToPlaywrightTestScriptPlugin.Last().ToolCalls.First()?.FunctionArguments);
+            ArgumentNullException.ThrowIfNull(dict);
+            testScript = dict.First().Value;
+        }
+        var errorContent = string.Empty;
+        var testPass = response[response.Count - 1].Content?.StartsWith("TEST OK", StringComparison.OrdinalIgnoreCase) ?? false;
+        if (!testPass)
+        {
+            var errorFiles = Directory.GetFiles("./test-results", "error-context.md", SearchOption.AllDirectories);
+            if (errorFiles.Length > 0)
+            {
+                errorContent = await File.ReadAllTextAsync(errorFiles[0]);
+            }
+        }
+        return new GenerateTestResult
+        {
+            Id = generateTestRequest.Id,
+            Text = response[response.Count - 1].Content ?? "",
+            TestScript = testScript,
+            ScriptAvailable = hasToolCallToPlaywrightTestScriptPlugin,
+            TestPass = testPass,
+            ErrorContent = errorContent,
+        };
+
+    }
 }
 
 internal static class GenerateTestRequestExtensions
