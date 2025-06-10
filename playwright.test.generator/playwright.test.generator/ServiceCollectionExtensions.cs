@@ -7,9 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using ModelContextProtocol.Client;
-using ModelContextProtocol.Protocol.Transport;
-using ModelContextProtocol.Protocol.Types;
-using ModelContextProtocol.Server;
 using playwright.test.generator.IocConventions;
 using playwright.test.generator.Settings;
 

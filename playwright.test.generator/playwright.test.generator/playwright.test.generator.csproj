@@ -18,7 +18,8 @@
 		<PackageReference Include="Microsoft.SemanticKernel" />
 		<PackageReference Include="Microsoft.Extensions.Options" />
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
-		<PackageReference Include="OllamaSharp.ModelContextProtocol" />
+    <PackageReference Include="ModelContextProtocol"  />
+    <PackageReference Include="ModelContextProtocol.AspNetCore"  />
 	</ItemGroup>
 	<ItemGroup>
 	  <EmbeddedResource Include="Templates\ms-mcp-prompt-3.md" />

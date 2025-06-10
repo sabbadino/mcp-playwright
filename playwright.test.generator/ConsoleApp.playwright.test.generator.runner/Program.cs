@@ -8,7 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OllamaSharp;
+
 using OpenTelemetry.Logs;
 using OpenTelemetry.Trace;
 using playwright.test.generator;
