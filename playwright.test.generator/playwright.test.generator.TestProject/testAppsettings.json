@@ -1,0 +1,43 @@
+{
+    "Logging": {
+        "LogLevel": {
+            "Default": "Debug",
+            "System.Net.Http.HttpClient": "Debug",
+            "ModelContextProtocol": "Debug"
+        }
+    },
+    "PlayWrightTestGenerator": {
+        "ScriptFixRetries": 3,
+        "SemanticKernelsSettings": {
+            "ApiKeys": {
+                "DevAzureOpenAiApiKey": "fake-api-key",
+                "DevGeminiApiKey": "fake-api-key",
+                "DevOpenAiApiKey": "fake-api-key"
+            },
+            "LogLevel": "Debug",
+            //given a SystemMessageName, thisis wehere the fdile are searched for
+            // $"Templates/systemMessage-{name}.txt"
+            // make sure to set the file as "Content" and "Copy Always"
+            "KernelSettings": [
+                {
+                    "McpServerName": "playwright_ms",
+                    "Command": "npx",
+                    "Arguments": [ "@playwright/mcp@latest", "--isolated" ],
+                    "Plugins": [ "playwright.test.generator.Plugins.PlaywrightTestScriptPlugin" ],
+                    "Name": "KernelAzureOpenAi-gpt-4.1",
+                    "SystemMessageName": "ms-mcp-prompt-3.md",
+                    "IsDefault": true,
+                    "Temperature": 0,
+                    "Model": {
+                        "Category": "AzureOpenAi",
+                        "DeploymentOrModelName": "gpt-4.1",
+                        "Url": "https://dev-openai-topconsult-sw-oai.openai.azure.com",
+                        "ApiKeyName": "DevAzureOpenAiApiKey"
+                    }
+                }
+            ]
+        }
+    }
+}
+
+

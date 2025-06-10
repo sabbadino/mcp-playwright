@@ -7,6 +7,7 @@ namespace playwright.test.generator.Services;
 public interface ICommandRunnerService
 {
     Task<(int ExitCode, string stdOut, string stdError)> RunCommand(string commandToRun);
+    Task SetupPlayWright(ICommandRunnerService commandRunnerService, ILogger logger);
 }
 
 public class CommandRunnerService : ICommandRunnerService, ISingletonScope
@@ -52,5 +53,35 @@ public class CommandRunnerService : ICommandRunnerService, ISingletonScope
             _logger.LogInformation($"exit code {process.ExitCode}. Output: {outputTask.Result}");
         }
         return (process.ExitCode, outputTask.Result, errorTask.Result); // Return the exit code of the process 
+    }
+
+    public async Task SetupPlayWright(ICommandRunnerService commandRunnerService, ILogger logger)
+    {
+        try
+        {
+
+            var ec = await commandRunnerService.RunCommand("npm.cmd init -y");
+            if (ec.ExitCode != 0)
+            {
+                throw new Exception($"npm.cmd init -y failed with exit code {ec}");
+            }
+            // Install Playwright cli 
+            ec = await commandRunnerService.RunCommand("npm.cmd install --save-dev @playwright/test");
+            if (ec.ExitCode != 0)
+            {
+                throw new Exception($"npm install @playwright/test failed with exit code {ec}");
+            }
+            // Install browser plugins 
+            ec = await commandRunnerService.RunCommand("npx.cmd playwright install");
+            if (ec.ExitCode != 0)
+            {
+                throw new Exception($"npx.cmd playwright install failed with exit code {ec}");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"A generic error occurred while setting up Playwright. {ex}");
+            throw;
+        }
     }
 }
