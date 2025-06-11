@@ -114,15 +114,28 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
 
     private static PromptExecutionSettings CreatePromptExecutionSettings(KernelWrapper kernelWrapper)
     {
+#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         return kernelWrapper.KernelSettings.Model?.Category switch
         {
             ModelCategory.AzureOpenAi => new AzureOpenAIPromptExecutionSettings
             {
-                Temperature = kernelWrapper.KernelSettings.Temperature
+                Temperature = kernelWrapper.KernelSettings.Temperature,
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(
+                options: new FunctionChoiceBehaviorOptions
+                {
+                    AllowStrictSchemaAdherence = true,
+                    RetainArgumentTypes = true
+                })
             },
             ModelCategory.OpenAi => new OpenAIPromptExecutionSettings
             {
-                Temperature = kernelWrapper.KernelSettings.Temperature
+                Temperature = kernelWrapper.KernelSettings.Temperature,
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(
+                options: new FunctionChoiceBehaviorOptions
+                {
+                    AllowStrictSchemaAdherence = true,
+                    RetainArgumentTypes = true
+                })
             },
             //            ModelCategory.Gemini =>
             //#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -134,6 +147,7 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
 
             _ => throw new SemanticKernelException($"Model category {kernelWrapper.KernelSettings.Model?.Category} is not supported"),
         };
+#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     }
     public async Task<GenerateTestResult> GenerateTestIChatClientCompletion(GenerateTestRequest generateTestRequest, CancellationToken cancellationToken = default)
     {
@@ -144,7 +158,6 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         var prompt = generateTestRequest.ToUserMessage();
         history.AddUserMessage(prompt);
         var promptExecutionSettings = CreatePromptExecutionSettings(kernelWrapper);
-        promptExecutionSettings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
         var response = await chatClient.GetChatMessageContentsAsync(history, promptExecutionSettings, kernelWrapper.Kernel, cancellationToken);
         ArgumentNullException.ThrowIfNull(response);
         if (response.Count == 0)

@@ -23,10 +23,10 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Include="Templates\ms-mcp-prompt-2.md" />
+	  <EmbeddedResource Include="Templates\ms-mcp-prompt-2-no-browser_generate_playwright_test.md" />
+	  <EmbeddedResource Include="Templates\ms-mcp-prompt-3-no-browser_generate_playwright_test.md" />
 	  <EmbeddedResource Include="Templates\ms-mcp-prompt-3.md" />
-	  <EmbeddedResource Include="Templates\ms-mcp-prompt-3-wrong-step-gemeration.md" />
-	  <EmbeddedResource Include="Templates\ms-mcp-prompt-2-wrong-steps-generation.md" />
+	  <EmbeddedResource Include="Templates\ms-mcp-prompt-2.md" />
 	  <EmbeddedResource Include="Templates\ms-mcp-prompt-1.md" />
 	</ItemGroup>
 </Project>

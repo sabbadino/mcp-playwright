@@ -1,7 +1,20 @@
-"{\"name\":\"Release Notes Sidebar Navigation and Content Verification\",\"description\":\"Verify the presence of 'Release Notes' link in the sidebar, navigate to it, click on 'Version 1.0.3', and check for specific texts on the page.\",
-\"steps\"
-:[\"navigate to 'https://executeautomation.github.io/mcp-playwright/docs/intro'\",\"expect a link with name 'Release Notes' to be visible\",\"click the link with name 'Release Notes'\",\"click the link with name 'Version 1.0.3'\",\"expect the page to contain text 'start_codegen_session: Start a new session to record Playwright actions'\",\"expect the page to contain text 'end_codegen_session: End a session and generate test file'\",\"expect the page to contain text 'get_codegen_session: Retrieve information about a session'\"]
-}"
+- in SK in the function definition steps is defined as array of strings
 
-{"method":"tools/call","params":{"name":"browser_generate_playwright_test","arguments":{"name":"Release Notes Sidebar Navigation and Content Verification","description":"Verify the presence of \u0027Release Notes\u0027 link in the sidebar, navigate to it, click on \u0027Version 1.0.3\u0027, and check for specific texts on the page.",
-"steps":"[\u0022navigate to \u0027https://executeautomation.github.io/mcp-playwright/docs/intro\u0027\u0022,\u0022expect a link with name \u0027Release Notes\u0027 to be visible\u0022,\u0022click the link with name \u0027Release Notes\u0027\u0022,\u0022click the link with name \u0027Version 1.0.3\u0027\u0022,\u0022expect the page to contain text \u0027start_codegen_session: Start a new session to record Playwright actions\u0027\u0022,\u0022expect the page to contain text \u0027end_codegen_session: End a session and generate test file\u0027\u0022,\u0022expect the page to contain text \u0027get_codegen_session: Retrieve information about a session\u0027\u0022]"}},"id":13,"jsonrpc":"2.0"}
+- Arguments in SK 
+{
+"name":"name",
+"description":"description",
+"steps" :["ABCD"]
+}
+
+sent by MCP client note that [] is surrounded by double quotes
+{
+"method":"tools/call",
+"params":{
+	"name":"browser_generate_playwright_test",
+	"arguments":{
+		"name":"name1",
+		"description":"description",
+        "steps":"[\u0022ABCDu0022]"}},"id":13,"jsonrpc":"2.0"}
+		
+something similar happend with paramters of the numbers. They are enclosed with double quotes 
