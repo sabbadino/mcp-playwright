@@ -35,15 +35,15 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         // Initialization code here
     }
 
-    private static ChatOptions CreateChatOptions(KernelWrapper kernelWrapper)
-    {
-#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        IEnumerable<AIFunction> aiFunctions = kernelWrapper.Kernel.Plugins.SelectMany(kp => kp.AsAIFunctions(kernelWrapper.Kernel));
-#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        return new ChatOptions { Temperature = kernelWrapper.KernelSettings.Temperature, ToolMode = ChatToolMode.Auto
-            , Tools = [.. aiFunctions ]
-        };    
-    }
+//    private static ChatOptions CreateChatOptions(KernelWrapper kernelWrapper)
+//    {
+//#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//        IEnumerable<AIFunction> aiFunctions = kernelWrapper.Kernel.Plugins.SelectMany(kp => kp.AsAIFunctions(kernelWrapper.Kernel));
+//#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//        return new ChatOptions { Temperature = kernelWrapper.KernelSettings.Temperature, ToolMode = ChatToolMode.Auto
+//            , Tools = [.. aiFunctions ]
+//        };    
+//    }
 
     private KernelWrapper GetKernelWrapper(string kernelName)
     {
@@ -60,57 +60,57 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
     }
 
     // Add methods to generate Playwright tests based on the provided options and kernel settings
-    public async Task<GenerateTestResult> GenerateTestIChatClient(GenerateTestRequest generateTestRequest,CancellationToken cancellationToken = default)
-    {
-        var kernelWrapper = GetKernelWrapper(generateTestRequest.KernelName);
-        var chatClient  = kernelWrapper.Kernel.GetRequiredService<IChatClient>();
-        var history = new List<ChatMessage>();    
-        history.Add(new ChatMessage (ChatRole.System,_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName).Replace(TestGeneratorsConstants.GenerateRetriesNumberPlaceholder,_options.ScriptFixRetries.ToString())));
-        history.Add(new ChatMessage(ChatRole.User, generateTestRequest.ToUserMessage()));
-        var chatOptions = CreateChatOptions(kernelWrapper);
-        var response = await chatClient.GetResponseAsync(history,chatOptions, cancellationToken);
+//    public async Task<GenerateTestResult> GenerateTestIChatClient(GenerateTestRequest generateTestRequest,CancellationToken cancellationToken = default)
+//    {
+//        var kernelWrapper = GetKernelWrapper(generateTestRequest.KernelName);
+//        var chatClient  = kernelWrapper.Kernel.GetRequiredService<IChatClient>();
+//        var history = new List<ChatMessage>();    
+//        history.Add(new ChatMessage (ChatRole.System,_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName).Replace(TestGeneratorsConstants.GenerateRetriesNumberPlaceholder,_options.ScriptFixRetries.ToString())));
+//        history.Add(new ChatMessage(ChatRole.User, generateTestRequest.ToUserMessage()));
+//        var chatOptions = CreateChatOptions(kernelWrapper);
+//        var response = await chatClient.GetResponseAsync(history,chatOptions, cancellationToken);
 
      
      
 
-        ArgumentNullException.ThrowIfNull(response);
-        if(response.Messages.Count==0)
-        {
-            throw new SemanticKernelException($"No response received from the chat client. (response.Messages.Count==0)");    
-        }
-        var lastFunctionCallContext = response.Messages.LastOrDefault(m => m.Role == ChatRole.Assistant && m.Contents.LastOrDefault() is Microsoft.Extensions.AI.FunctionCallContent cc)?.Contents.LastOrDefault(c => {
-            if (c is Microsoft.Extensions.AI.FunctionCallContent x) {
-                return x.Name.EndsWith(PlaywrightTestScriptPlugin.KernelFunctionName, StringComparison.OrdinalIgnoreCase);
-            }
-            return false; }) as Microsoft.Extensions.AI.FunctionCallContent;
-        var testScript = "";
-        bool hasToolCallToPlaywrightTestScriptPlugin = false;
-        if (lastFunctionCallContext != null) {
-            testScript = lastFunctionCallContext.Arguments?.First().Value as string ??"";
-            hasToolCallToPlaywrightTestScriptPlugin = true;
-        }
+//        ArgumentNullException.ThrowIfNull(response);
+//        if(response.Messages.Count==0)
+//        {
+//            throw new SemanticKernelException($"No response received from the chat client. (response.Messages.Count==0)");    
+//        }
+//        var lastFunctionCallContext = response.Messages.LastOrDefault(m => m.Role == ChatRole.Assistant && m.Contents.LastOrDefault() is Microsoft.Extensions.AI.FunctionCallContent cc)?.Contents.LastOrDefault(c => {
+//            if (c is Microsoft.Extensions.AI.FunctionCallContent x) {
+//                return x.Name.EndsWith(PlaywrightTestScriptPlugin.KernelFunctionName, StringComparison.OrdinalIgnoreCase);
+//            }
+//            return false; }) as Microsoft.Extensions.AI.FunctionCallContent;
+//        var testScript = "";
+//        bool hasToolCallToPlaywrightTestScriptPlugin = false;
+//        if (lastFunctionCallContext != null) {
+//            testScript = lastFunctionCallContext.Arguments?.First().Value as string ??"";
+//            hasToolCallToPlaywrightTestScriptPlugin = true;
+//        }
      
-        var errorContent = string.Empty;
-        var reply = response.Messages[response.Messages.Count - 1].Text;
-        var testPass = reply.StartsWith("TEST OK", StringComparison.OrdinalIgnoreCase) ;
-        if (!testPass)
-        {
-            var errorFiles = Directory.GetFiles("./test-results", "error-context.md", SearchOption.AllDirectories);
-            if (errorFiles.Length > 0)
-            {
-                errorContent = await File.ReadAllTextAsync(errorFiles[0]);
-}
-        }
-        return new GenerateTestResult
-        {
-            Id = generateTestRequest.Id,
-            Text = reply,
-            TestScript = testScript,
-            ScriptAvailable = hasToolCallToPlaywrightTestScriptPlugin,
-            TestPass = testPass,
-            ErrorContent = errorContent,
-        };
-    }
+//        var errorContent = string.Empty;
+//        var reply = response.Messages[response.Messages.Count - 1].Text;
+//        var testPass = reply.StartsWith("TEST OK", StringComparison.OrdinalIgnoreCase) ;
+//        if (!testPass)
+//        {
+//            var errorFiles = Directory.GetFiles("./test-results", "error-context.md", SearchOption.AllDirectories);
+//            if (errorFiles.Length > 0)
+//            {
+//                errorContent = await File.ReadAllTextAsync(errorFiles[0]);
+//}
+//        }
+//        return new GenerateTestResult
+//        {
+//            Id = generateTestRequest.Id,
+//            Text = reply,
+//            TestScript = testScript,
+//            ScriptAvailable = hasToolCallToPlaywrightTestScriptPlugin,
+//            TestPass = testPass,
+//            ErrorContent = errorContent,
+//        };
+//    }
 
     private static PromptExecutionSettings CreatePromptExecutionSettings(KernelWrapper kernelWrapper)
     {
@@ -141,7 +141,8 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         var chatClient = kernelWrapper.Kernel.GetRequiredService<IChatCompletionService>();
         var history = new ChatHistory();
         history.AddSystemMessage(_templatesProvider.GetTemplate(kernelWrapper.KernelSettings.SystemMessageName).Replace(TestGeneratorsConstants.GenerateRetriesNumberPlaceholder, _options.ScriptFixRetries.ToString()));
-        history.AddUserMessage(generateTestRequest.ToUserMessage());
+        var prompt = generateTestRequest.ToUserMessage();
+        history.AddUserMessage(prompt);
         var promptExecutionSettings = CreatePromptExecutionSettings(kernelWrapper);
         promptExecutionSettings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
         var response = await chatClient.GetChatMessageContentsAsync(history, promptExecutionSettings, kernelWrapper.Kernel, cancellationToken);
@@ -173,8 +174,9 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
         }
         return new GenerateTestResult
         {
+            InputPrompt = prompt,
             Id = generateTestRequest.Id,
-            Text = response[response.Count - 1].Content ?? "",
+            LLMFinalOutput = response[response.Count - 1].Content ?? "",
             TestScript = testScript,
             ScriptAvailable = hasToolCallToPlaywrightTestScriptPlugin,
             TestPass = testPass,

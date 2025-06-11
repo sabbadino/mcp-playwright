@@ -1,0 +1,40 @@
+{
+    "Id": "test-id-123",
+    "Name": "Test Scenario",
+    "Description": "This is a test scenario for Playwright test generation.",
+    "Steps": [
+        {
+            "StepType": "given",
+            "Text": "you open  \u0027https://executeautomation.github.io/mcp-playwright/docs/intro\u0027"
+        },
+        //{
+        //    "StepType": "given",
+        //    "Text": "you maximize the browser"
+        //},
+        {
+            "StepType": "then",
+            "Text": "verify that there is a link with exact text \u0027Release Notes\u0027 present on the sidebar"
+        },
+        {
+            "StepType": "given",
+            "Text": "you click on \u0027Release Notes\u0027 link"
+        },
+        {
+            "StepType": "given",
+            "Text": "you click on \u0027Version 1.0.3\u0027 link"
+        },
+        {
+            "StepType": "then",
+            "Text": "verify the page contains the text \u0027start_codegen_session: Start a new session to record Playwright actions\u0027"
+        },
+        {
+            "StepType": "then",
+            "Text": "verify the page contains the text \u0027end_codegen_session: End a session and generate test file\u0027"
+        },
+        {
+            "StepType": "then",
+            "Text": "verify the page contains the text \u0027get_codegen_session: Retrieve information about a session\u0027"
+        }
+    ],
+    "KernelName": ""
+}

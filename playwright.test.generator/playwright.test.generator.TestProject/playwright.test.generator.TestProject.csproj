@@ -9,9 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Scenarios\scenario1.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="testAppsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Scenarios\scenario1.json" />
   </ItemGroup>
 
   <ItemGroup>

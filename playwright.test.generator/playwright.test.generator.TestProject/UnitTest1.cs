@@ -1,5 +1,7 @@
 ﻿
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,19 +29,18 @@ namespace playwright.test.generator.TestProject
                 .AddCommandLine(Environment.GetCommandLineArgs());
 
             builder.Services.AddPlayWrightTestGeneratorOptions(options => builder.Configuration.Bind("PlayWrightTestGenerator", options));
+            //builder.Logging.ClearProviders();
 
-            builder.Logging.ClearProviders();
-
-            builder.Services.AddOpenTelemetry()
-              .WithTracing(b =>
-              {
-                  b.AddHttpClientInstrumentation().AddConsoleExporter()
-                  .AddSource("playwright.test.generator.TestProject")
-                  .SetSampler(new AlwaysOnSampler());
-              }).WithLogging(builder =>
-              {
-                  builder.AddConsoleExporter();
-              });
+            //builder.Services.AddOpenTelemetry()
+            //  .WithTracing(b =>
+            //  {
+            //      b.AddHttpClientInstrumentation().AddConsoleExporter()
+            //      .AddSource("playwright.test.generator.TestProject")
+            //      .SetSampler(new AlwaysOnSampler());
+            //  }).WithLogging(builder =>
+            //  {
+            //      builder.AddConsoleExporter();
+            //  });
 
 
             var app = builder.Build();
@@ -51,30 +52,36 @@ namespace playwright.test.generator.TestProject
         }
 
         [Fact]
-        public async Task Test1()
-        { var req = new GenerateTestRequest
+        public async Task Scenario1Test()
         {
-            Id = "test-id-123",
-            Name = "Test Scenario",
-            Description = "This is a test scenario for Playwright test generation.",
-            Steps = new List<ScenarioStep>
-                {
-                    new ScenarioStep {StepType = StepType.Given,  Text = "you open  'https://executeautomation.github.io/mcp-playwright/docs/intro'" },
-                    new ScenarioStep {StepType = StepType.Then, Text = "verify that there is a link with exact text 'Release Notes' present on the sidebar"},
-                    new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Release Notes' link"},
-                    new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Version 1.0.3' link"},
-                    new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'start_codegen_session: Start a new session to record Playwright actions'"},
-                    new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'end_codegen_session: End a session and generate test file'"},
-                    new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'get_codegen_session: Retrieve information about a session'"}
-                },
-        };
+            //var req = new GenerateTestRequest
+        //{
+        //    Id = "test-id-123",
+        //    Name = "Test Scenario",
+        //    Description = "This is a test scenario for Playwright test generation.",
+        //    Steps = new List<ScenarioStep>
+        //        {
+        //            new ScenarioStep {StepType = StepType.Given,  Text = "you open  'https://executeautomation.github.io/mcp-playwright/docs/intro'" },
+        //            new ScenarioStep {StepType = StepType.Then, Text = "verify that there is a link with exact text 'Release Notes' present on the sidebar"},
+        //            new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Release Notes' link"},
+        //            new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Version 1.0.3' link"},
+        //            new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'start_codegen_session: Start a new session to record Playwright actions'"},
+        //            new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'end_codegen_session: End a session and generate test file'"},
+        //            new ScenarioStep {StepType = StepType.Then, Text = "verify the page contains the text 'get_codegen_session: Retrieve information about a session'"}
+        //        },
+        //};
+        //    var t = JsonSerializer.Serialize(req, new JsonSerializerOptions { WriteIndented = true ,
+        //        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)    }
+        //    });
+            var req = ScenarioLoader.LoadScenario("scenario1.json");    
             var playWrightTestGenerator = _serviceProvider.GetRequiredService<IPlayWrightTestGenerator>();
-            var res = await playWrightTestGenerator.GenerateTestIChatClient(req, CancellationToken.None);
+            var res = await playWrightTestGenerator.GenerateTestIChatClientCompletion(req, CancellationToken.None);
 
-            Assert.True(res.TestPass,"because the test scenario should pass based on the provided steps.");
-            Assert.True(res.ScriptAvailable, "because the script should be Available");
+            Assert.True(res.TestPass,res.LLMFinalOutput);
+            Assert.True(res.ScriptAvailable, res.LLMFinalOutput);
             Assert.Equal(res.Id, req.Id);
-            Assert.True(!string.IsNullOrWhiteSpace(res.TestScript), "because the script should be provided");
+            Assert.True(!string.IsNullOrWhiteSpace(res.TestScript), res.LLMFinalOutput);
+            Assert.True(!string.IsNullOrWhiteSpace(res.InputPrompt), res.LLMFinalOutput);
 
         }
     }

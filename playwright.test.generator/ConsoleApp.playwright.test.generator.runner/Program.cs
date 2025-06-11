@@ -53,7 +53,7 @@ logger.LogInformation("Starting Playwright test generation runner.");
 var runner= app.Services.GetRequiredService<ICommandRunnerService>();
 await runner.SetupPlayWright(runner, logger);
 var playWrightTestGenerator = app.Services.GetRequiredService<IPlayWrightTestGenerator>();
-var res = await playWrightTestGenerator.GenerateTestIChatClient(new GenerateTestRequest
+var res = await playWrightTestGenerator.GenerateTestIChatClientCompletion(new GenerateTestRequest
 {
     Id = "test-id-123",
     Name = "Test Scenario",
@@ -61,6 +61,7 @@ var res = await playWrightTestGenerator.GenerateTestIChatClient(new GenerateTest
     Steps = new List<ScenarioStep>
     {
         new ScenarioStep {StepType = StepType.Given,  Text = "you open  'https://executeautomation.github.io/mcp-playwright/docs/intro'" },
+        //new ScenarioStep {StepType = StepType.Given,  Text = "you maximize teh browser" },
         new ScenarioStep {StepType = StepType.Then, Text = "verify that there is a link with exact text 'Release Notes' present on the sidebar"},
         new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Release Notes' link"},
         new ScenarioStep {StepType = StepType.Given, Text = "you click on 'Version 1.0.3' link"},

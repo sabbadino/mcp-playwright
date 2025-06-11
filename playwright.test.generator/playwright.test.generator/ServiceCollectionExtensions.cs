@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using ModelContextProtocol.Client;
 using playwright.test.generator.IocConventions;
 using playwright.test.generator.Settings;
@@ -115,7 +116,7 @@ namespace playwright.test.generator
             string? url = model.Url;
             string apiKeyName = model.ApiKeyName;
             var category = model.Category;
-            if (!semanticKernelsSettings.ApiKeys.TryGetValue(apiKeyName, out string apiKeyValue))
+            if (!semanticKernelsSettings.ApiKeys.TryGetValue(apiKeyName, out var apiKeyValue))
             {
                 throw new Exception($"Could not find key {apiKeyName}");
             }
@@ -125,22 +126,24 @@ namespace playwright.test.generator
             }
             if (category == ModelCategory.AzureOpenAi)
             {
-                skBuilder.AddAzureOpenAIChatClient(deploymentOrModelName, url, apiKeyValue);
+                skBuilder.AddAzureOpenAIChatCompletion(deploymentOrModelName, url, apiKeyValue);
             }
             else if (category == ModelCategory.OpenAi)
             {
-                skBuilder.AddOpenAIChatClient(deploymentOrModelName, apiKeyValue);
+                skBuilder.AddOpenAIChatCompletion(deploymentOrModelName, apiKeyValue);
             }
             else if (category == ModelCategory.Anthropic)
             {
-                IChatClient client = new AnthropicClient(apiKeyValue).Messages
+#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+                var client = new AnthropicClient(apiKeyValue).Messages
                          .AsBuilder()
                          .UseFunctionInvocation()
                          .ConfigureOptions( o=> {
                              o.ModelId = deploymentOrModelName;
                              o.MaxOutputTokens= 1000;
                          })  
-                         .Build();
+                         .Build().AsChatCompletionService();
+#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 skBuilder.Services.AddSingleton(client); 
             }
 
