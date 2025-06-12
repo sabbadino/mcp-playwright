@@ -1,0 +1,58 @@
+// colonna "Istruzioni" e "Dati di input" su step "when" 
+// colonna "Risultati attesi" su step "then" 
+
+// una step del test si espande in due righe sottostanti ; 
+//un "when" che accorpa "Istruzioni" e "Dati di input"
+//un "then" che contiene "Risultati attesi""
+
+// esempio mappatura test su excel
+
+{
+    "Id": "GESANA.UC02.US02_TC02",
+    "Description": "Visualizzazione dati di una persona fisica \"Professionista\" già censita",
+    "Steps": [
+        {
+            "StepType": "when",
+            "Text": "L'utente accede all'applicativo <url>"
+            // Ottimale "Text": "L'utente apre il browser e naviga all'indirizzo https:\\localhost:4200"
+        },
+        {
+            "StepType": "then",
+            "Text": "Il sistema apre la schermata principale del SISFOR sulla pagina della SCRIVANIA"
+            // Ottimale "Text": "un elemento della pagina che ci si attende:  per esempio il valore del title o un testo specifico nel corpo della pagina"
+        },
+        {
+            "StepType": "when",
+            "Text": "L’utente seleziona la voce di menu Anagrafe/Persona/Apri"
+        },
+        {
+            "StepType": "then",
+            "Text": "Il sistema rimanda alla form di ricerca"
+            // Ottimale "Text": "indicare l'url mostratao del browser che ci si aspetta (e.g. ../persons) o un elemento della pagina che ci si attende:  per esempio il valore del title o un testo specifico nel corpo della pagina"
+
+        },
+        {
+            "StepType": "when",
+            "Text": "L'utente imposta come parametro di ricerca il Meccanografico e preme il pulsante ''Cerca'. Dati di input:   Meccanografico = 1010"
+        },
+        {
+            "StepType": "then",
+            "Text": "Il sistema popola la griglia dei risultati con un record coerente con la ricerca effettuata"
+            // Ottimale : occorre descrivere operativamente cosa ci si aspetta, coerente "non ha molto senso" per un test automatizzato
+            // e.g. una textbox o label con un certo valore atteso o cose simili 
+        },
+        {
+            "StepType": "when",
+            "Text": "L'utente seleziona sulla griglia il record restituito dalla ricerca e preme il pulsante 'Seleziona'"
+        },
+        {
+            "StepType": "then",
+            "Text": "Il sistema memorizza nel box dedicato le informazioni del professionista; \nInoltre, mostra la schermata di dettaglio dei dati persona (frmpersona) che risulta popolata con i dati del professionista, tra i quali: \n Cognome = Abbate \n Nome = Mariano \n Data di nascita = 09/08/1904"
+            // Commento : non mi è chiaro cosa deve succedere / aspettarsi
+
+        }
+    ]
+}
+
+
+

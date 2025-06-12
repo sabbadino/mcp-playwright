@@ -56,7 +56,6 @@ var playWrightTestGenerator = app.Services.GetRequiredService<IPlayWrightTestGen
 var res = await playWrightTestGenerator.GenerateTestIChatClientCompletion(new GenerateTestRequest
 {
     Id = "test-id-123",
-    Name = "Test Scenario",
     Description = "This is a test scenario for Playwright test generation.",
     Steps = new List<ScenarioStep>
     {

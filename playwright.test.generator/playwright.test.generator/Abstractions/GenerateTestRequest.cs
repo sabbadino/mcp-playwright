@@ -9,7 +9,7 @@ namespace playwright.test.generator.Abstractions
     public record GenerateTestRequest
     {
         public required string Id { get; init; } = "";
-        public required string Name { get; init; } = "";
+      
         public string Description { get; init; } = "";
 
         public List<ScenarioStep> Steps { get; init; } = new List<ScenarioStep>();

@@ -1,6 +1,5 @@
 {
     "Id": "test-id-123",
-    "Name": "Test Scenario",
     "Description": "This is a test scenario for Playwright test generation.",
     "Steps": [
         {
