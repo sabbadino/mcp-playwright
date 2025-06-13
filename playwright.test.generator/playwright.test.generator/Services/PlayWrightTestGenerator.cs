@@ -137,6 +137,15 @@ public class PlayWrightTestGenerator : IPlayWrightTestGenerator, ISingletonScope
                     RetainArgumentTypes = true
                 })
             },
+            ModelCategory.Anthropic=> new PromptExecutionSettings
+            {
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(
+              options: new FunctionChoiceBehaviorOptions
+              {
+                  AllowStrictSchemaAdherence = true,
+                  RetainArgumentTypes = true
+              })
+            },
             //            ModelCategory.Gemini =>
             //#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             //                new GeminiPromptExecutionSettings
