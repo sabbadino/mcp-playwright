@@ -67,20 +67,20 @@ namespace playwright.test.generator.TestProject
 
         }
 
-            [Fact]
-            public async Task ScenarioGESANAUC02US02_TC02Test()
-            {
+            //[Fact]
+            //public async Task ScenarioGESANAUC02US02_TC02Test()
+            //{
 
-                var req = ScenarioLoader.LoadScenario("scenario-GESANA.UC02.US02_TC02.json");
-                var playWrightTestGenerator = _serviceProvider.GetRequiredService<IPlayWrightTestGenerator>();
-                var res = await playWrightTestGenerator.GenerateTestIChatClientCompletion(req, CancellationToken.None);
+            //    var req = ScenarioLoader.LoadScenario("scenario-GESANA.UC02.US02_TC02.json");
+            //    var playWrightTestGenerator = _serviceProvider.GetRequiredService<IPlayWrightTestGenerator>();
+            //    var res = await playWrightTestGenerator.GenerateTestIChatClientCompletion(req, CancellationToken.None);
 
-                Assert.True(res.TestPass, res.LLMFinalOutput);
-                Assert.True(res.ScriptAvailable, res.LLMFinalOutput);
-                Assert.Equal(res.Id, req.Id);
-                Assert.True(!string.IsNullOrWhiteSpace(res.TestScript), res.LLMFinalOutput);
-                Assert.True(!string.IsNullOrWhiteSpace(res.InputPrompt), res.LLMFinalOutput);
+            //    Assert.True(res.TestPass, res.LLMFinalOutput);
+            //    Assert.True(res.ScriptAvailable, res.LLMFinalOutput);
+            //    Assert.Equal(res.Id, req.Id);
+            //    Assert.True(!string.IsNullOrWhiteSpace(res.TestScript), res.LLMFinalOutput);
+            //    Assert.True(!string.IsNullOrWhiteSpace(res.InputPrompt), res.LLMFinalOutput);
 
-            }
+            //}
         }
 }

@@ -12,9 +12,9 @@ You write concise, technical TypeScript code with accurate examples and the corr
 # DO run 'given' and 'when' steps using the tools provided by the Playwright related functions.
 
 # Only after all steps are completed: 
-    ## close the browser
     ## generate the playwright test for the given steps (use the 'browser_generate_playwright_test' tool). Once you have generated the test script call the 'evaluate_playwright_test_script' function that will run the generated script and provide feedback on the test execution.
     ## if you are reported that the emitted test script has errors or the test fails, try to fix it, but give up after {{generate_retries}} times
+    ## close the browser
 
 # IMPORTANT INSTRUCTIONS ABOUT SCRIPT GENERATION
   ## analyze with attention the page layout and use the most specific selector possible to avoid multiple matches that will generate an error in the test script
@@ -22,4 +22,7 @@ You write concise, technical TypeScript code with accurate examples and the corr
   ## DO NOT modify the text you are asked to match, unless explicitly requested
   ## analyze with attention the error messages returned by test script execution and fix the script accordingly
   ## use 'exact: true' for text matching
+  ## about 'browser_wait_for'
+    # functions has parameter 'textGone' that cannot be null. pass empty string if you don't want to provide a value for this 'textGone' parameter
+    # functions has parameter 'time ' that cannot be null. pass an integer equal to 3 seconds
 
