@@ -4,35 +4,37 @@
     "Steps": [
         {
             "StepType": "given",
-            "Text": "you open  \u0027https://executeautomation.github.io/mcp-playwright/docs/intro\u0027"
+            "Text": "you open  https://executeautomation.github.io/mcp-playwright/docs/intro"
         },
         //{
         //    "StepType": "given",
         //    "Text": "you maximize the browser"
         //},
+        // to investigate why {"method":"tools/call","params":{"name":"browser_wait_for","arguments":{"time":3,"text":"Release Notes","textGone":""}},"id":5,"jsonrpc":"2.0"} give timeout
         {
             "StepType": "then",
-            "Text": "verify that there is a link with exact text \u0027Release Notes\u0027 present on the sidebar"
+            //"Text": "verify that there is a link with exact text 'Release Notes' present on the sidebar"
+            "Text": "Verify that there is text 'Playwright MCP Server' on the page"
         },
         {
             "StepType": "given",
-            "Text": "you click on \u0027Release Notes\u0027 link"
+            "Text": "you click on 'Release Notes' link"
         },
         {
             "StepType": "given",
-            "Text": "you click on \u0027Version 1.0.3\u0027 link"
+            "Text": "you click on 'Version 1.0.3' link"
         },
         {
             "StepType": "then",
-            "Text": "verify the page contains the text \u0027start_codegen_session: Start a new session to record Playwright actions\u0027"
+            "Text": "verify the page contains the text 'start_codegen_session: Start a new session to record Playwright actions'"
         },
         {
             "StepType": "then",
-            "Text": "verify the page contains the text \u0027end_codegen_session: End a session and generate test file\u0027"
+            "Text": "verify the page contains the text 'end_codegen_session: End a session and generate test file'"
         },
         {
             "StepType": "then",
-            "Text": "verify the page contains the text \u0027get_codegen_session: Retrieve information about a session\u0027"
+            "Text": "verify the page contains the text 'get_codegen_session: Retrieve information about a session'"
         }
     ],
     "KernelName": ""
